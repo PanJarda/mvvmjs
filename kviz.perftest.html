@@ -115,42 +115,6 @@ label {
 
 </style>
 <body>
-<template id="quiz">
-	<div class="select" data-ev="mousedown:toggleSelect">
-		{{lang}}
-		<div class="select-arrow-wrapper">
-			<span class="arrow-down"></span>
-		</div>
-	</div>
-	<div class="overlay" data-ev="mousedown:toggleSelect" data-if="selectOpened:opened"></div>
-	<div class="options" data-if="selectOpened:opened">
-		<div class="option" data-ev="mouseup:pickLang" data-value="en">
-			EN
-		</div>
-		<div class="option" data-ev="mouseup:pickLang" data-value="moravian">
-			Moravian
-		</div>
-	</div>
-	<div data-if="page:PAGE_START">
-		<img src="{{img}}"/><br>
-		<button class="button" data-ev="mouseup:start">{{i10n_start}}</button>
-	</div>
-	<div data-if="page:PAGE_QUIZ">
-		<progress value="{{index}}" max="{{n}}"></progress>{{index}}<!-- -->/<!-- -->{{n}}
-		<br>
-		{{question}}
-		<ol id="answers" type="A"></ol>
-		<span class="button" data-ev="mouseup:prev" data-hide="isFirst">{{i10n_prev}}</span>
-		<span class="button" data-ev="mouseup:next" data-hide="isLast">{{i10n_next}}</span>
-		<span class="button"data-ev="mouseup:done" data-hide="notLast">{{i10n_done}}</span>
-	</div>
-	<div data-if="page:PAGE_RESULTS">
-		Percentil blbosti: <progress value="100" max="100"></progress>100/100<br>
-		<h1>Gratulujeme!</h1>
-		Seš uplná lama ty gádžo!<br>
-		<span class="button" data-ev="mouseup:repeat">Opakovat</span>
-	</div>
-</template>
 <template id="answer">
 	<li><input type="checkbox" checked="{{checked}}" id="{{id}}"/><label for="{{id}}">{{answerText}}</label></li>
 </template>
@@ -161,8 +125,8 @@ label {
 			<span class="arrow-down"></span>
 		</div>
 	</div>
-	<div class="overlay" data-ev="mousedown:toggleSelect" data-if="selectOpened:opened"></div>
-	<div class="options" data-if="selectOpened:opened">
+	<div class="overlay" data-ev="mousedown:toggleSelect" data-if="selectOpened:opened" hidden></div>
+	<div class="options" data-if="selectOpened:opened" hidden>
 		<div class="option" data-ev="mouseup:pickLang" data-value="en">
 			EN
 		</div>
@@ -170,20 +134,22 @@ label {
 			Moravian
 		</div>
 	</div>
-	<div data-if="page:PAGE_START">
+	<div data-if="page:PAGE_START" hidden>
 		<img src="{{img}}"/><br>
 		<button class="button" data-ev="mouseup:start">{{i10n_start}}</button>
 	</div>
-	<div data-if="page:PAGE_QUIZ">
+	<div data-if="page:PAGE_QUIZ" hidden>
 		<progress value="{{index}}" max="{{n}}"></progress>{{index}}<!-- -->/<!-- -->{{n}}
 		<br>
 		{{question}}
-		<ol id="answers" type="A"></ol>
+		<ol id="answers" data-foreach="answers" type="A">
+			<li><input type="checkbox" checked="{{checked}}" id="{{id}}"/><label for="{{id}}">{{answerText}}</label></li>
+		</ol>
 		<span class="button" data-ev="mouseup:prev" data-hide="isFirst">{{i10n_prev}}</span>
 		<span class="button" data-ev="mouseup:next" data-hide="isLast">{{i10n_next}}</span>
 		<span class="button"data-ev="mouseup:done" data-hide="notLast">{{i10n_done}}</span>
 	</div>
-	<div data-if="page:PAGE_RESULTS">
+	<div data-if="page:PAGE_RESULTS" hidden>
 		Percentil blbosti: <progress value="100" max="100"></progress>100/100<br>
 		<h1>Gratulujeme!</h1>
 		Seš uplná lama ty gádžo!<br>
@@ -284,8 +250,8 @@ const model = {
 	],
 	answers: {}
 };
-const quizTmpl = ko.initTmpl('quiz'),
-	answerTmpl = ko.initTmpl('answer'),
+const quizTmpl = ko.initTmpl('app'),
+	answerTmpl = ko.initTmpl('answer', true),
 	answersVM = ko.viewModel([]),
 	quizVM = ko.viewModel({
 		lang: 'en',
@@ -304,7 +270,8 @@ const quizTmpl = ko.initTmpl('quiz'),
 		i10n_prev: self => i10n[self.lang].prev,
 		i10n_next: self => i10n[self.lang].next,
 		i10n_done: self => i10n[self.lang].done,
-		selectOpened: 'closed'
+		selectOpened: 'closed',
+		answers: []
 	});
 	
 function saveAnswers(index) {

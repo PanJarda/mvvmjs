@@ -43,16 +43,19 @@ const ko = (() => {
 			'CHANGE_TAGNAME': CHANGE_TAGNAME
 		};
 
-	function initTmpl(id) {
-		const $tmpl = document.getElementById(id).content,
-			bindings = {},
+	function initTmpl(id, isTmpl) {
+		const $tmpl = id instanceof HTMLElement ? id : isTmpl
+						? document.getElementById(id).content
+						: document.getElementById(id);
+
+		const bindings = {},
 			mappings = {},
 			events = {},
 			stack = [$tmpl],
 			addr = [],
 			re = /{{(.+)}}/;
 
-		let node, nl, nv, name, val, m;
+		let node, nl, nv, name, val, m, parseChildren = true;
 		while(stack.length) {
 			node = stack.pop();
 		
@@ -133,14 +136,19 @@ const ko = (() => {
 					if ((m = val.match(re)) && name != 'value' && name != 'checked') {
 						(mappings[m[1]] = mappings[m[1]] || []).push([[...addr], ['attributes', name, 'value'], 'IDENTITY']);
 					}
-					// nejak zpracovat attributy
+					if (name == 'data-foreach') {
+						(mappings[val] = mappings[val] || []).push([[...addr], ['nodeValue'], 'IDENTITY']);
+						// musime zastavit prochazeni do hloubky protoze to neni nas byz ted
+
+						parseChildren = false;
+					}
 				}
 				for (const attr of attrsToRemove) {
 					node.removeAttribute(attr);
 				}
 			}
 			
-			if (nl = node.childNodes.length) {
+			if ((nl = node.childNodes.length) && parseChildren) {
 				addr.push(CHILD_NODES, nl - 1);
 			} else {
 				while (addr[addr.length-1] == 0) {
@@ -151,11 +159,16 @@ const ko = (() => {
 				addr[addr.length - 1] -= 1;
 			}
 			
-			stack.push(...node.childNodes);
+			if (parseChildren) {
+				stack.push(...node.childNodes);
+			} else {
+				parseChildren = true;
+			}
 		}
 
 		return {
 			DOMRef: $tmpl,
+			isTmpl: isTmpl,
 			mappings: mappings,
 			bindings: bindings,
 			events: events
@@ -180,11 +193,28 @@ const ko = (() => {
 	}
 
 	function render(tmpl, data, events) {
-		const $clone = document.importNode(tmpl.DOMRef, true);
-		
+		const $clone = tmpl.isTmpl ? document.importNode(tmpl.DOMRef, true) : tmpl.DOMRef;
 		const res = {};
 
 		for (const key in tmpl.mappings) {
+			if (data[key] instanceof ObservableArray) {
+				// zpracovavame vnorene pole ve viewmodelu
+				// tzn. na prvku kam se ma vykreslit zpracujeme
+				// template jednoho prvku
+				// a vykreslime ho
+				let subTmpl;
+				for (const mapping of tmpl.mappings[key]) {
+					const addr = mapping[0];
+					let node = $clone;
+					for (let i = 0; i < addr.length; i++) {
+						node = node[addr[i]];
+					}
+					
+					subTmpl = initTmpl(node);
+				}
+				continue;
+			}
+		
 			let addr, props, fn, nodeProp;
 			for (const mapping of tmpl.mappings[key]) {
 				let node = $clone;
@@ -269,6 +299,10 @@ const ko = (() => {
 					};
 					this._refs = [];
 				};
+				
+				if (Array.isArray(data[key])) {
+					this._data[key] = new ObservableArray(data[key]);
+				}
 				
 				Object.defineProperty(this, key, {
 					set: v => {
