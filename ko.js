@@ -44,9 +44,12 @@ const ko = (() => {
 		};
 
 	function initTmpl(id, isTmpl) {
-		const $tmpl = id instanceof HTMLElement ? id : isTmpl
-						? document.getElementById(id).content
-						: document.getElementById(id);
+		const $tmpl = id instanceof HTMLElement
+						? isTmpl
+							? id.content : id
+						: isTmpl
+							? document.getElementById(id).content
+							: document.getElementById(id);
 
 		const bindings = {},
 			mappings = {},
@@ -209,8 +212,10 @@ const ko = (() => {
 					for (let i = 0; i < addr.length; i++) {
 						node = node[addr[i]];
 					}
-					
-					subTmpl = initTmpl(node);
+					subTmpl = document.createElement('template');
+					document.head.appendChild(subTmpl);
+					subTmpl.content.appendChild(node.children[0]);
+					renderArray(node, initTmpl(subTmpl, true), data[key]);
 				}
 				continue;
 			}
@@ -509,8 +514,8 @@ const ko = (() => {
 		}
 	}
 	
-	function renderArray(targetId, tmpl, data, events) {
-		return new DOMArrayWrapper(document.getElementById(targetId), tmpl, data, events);
+	function renderArray(target, tmpl, data, events) {
+		return new DOMArrayWrapper(target, tmpl, data, events);
 	}
 
 	return {

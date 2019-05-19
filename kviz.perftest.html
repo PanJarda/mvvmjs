@@ -112,12 +112,8 @@ label {
 		background-color: lightBlue;
 	}
 }
-
 </style>
 <body>
-<template id="answer">
-	<li><input type="checkbox" checked="{{checked}}" id="{{id}}"/><label for="{{id}}">{{answerText}}</label></li>
-</template>
 <div id="app">
 	<div class="select" data-ev="mousedown:toggleSelect">
 		{{lang}}
@@ -142,7 +138,7 @@ label {
 		<progress value="{{index}}" max="{{n}}"></progress>{{index}}<!-- -->/<!-- -->{{n}}
 		<br>
 		{{question}}
-		<ol id="answers" data-foreach="answers" type="A">
+		<ol data-foreach="answers" type="A">
 			<li><input type="checkbox" checked="{{checked}}" id="{{id}}"/><label for="{{id}}">{{answerText}}</label></li>
 		</ol>
 		<span class="button" data-ev="mouseup:prev" data-hide="isFirst">{{i10n_prev}}</span>
@@ -151,14 +147,13 @@ label {
 	</div>
 	<div data-if="page:PAGE_RESULTS" hidden>
 		Percentil blbosti: <progress value="100" max="100"></progress>100/100<br>
-		<h1>Gratulujeme!</h1>
 		Seš uplná lama ty gádžo!<br>
+		<h1>Gratulujeme!</h1>
 		<span class="button" data-ev="mouseup:repeat">Opakovat</span>
 	</div>
 </div>
 <script id="kojs" src="ko.js"></script>
 <script>
-
 const i10n = {
 	en: {
 		start: 'Start',
@@ -251,8 +246,6 @@ const model = {
 	answers: {}
 };
 const quizTmpl = ko.initTmpl('app'),
-	answerTmpl = ko.initTmpl('answer', true),
-	answersVM = ko.viewModel([]),
 	quizVM = ko.viewModel({
 		lang: 'en',
 		img: 'https://cdn.pejskari.cz/quiz/health.jpg?w=512&h=320&c=1',
@@ -276,7 +269,7 @@ const quizTmpl = ko.initTmpl('app'),
 	
 function saveAnswers(index) {
 	const answersChecked = [];
-	for (var answer of answersVM) {
+	for (var answer of quizVM.answers) {
 		if (answer.checked) {
 			answersChecked.push(answer.id);
 		}
@@ -286,41 +279,23 @@ function saveAnswers(index) {
 
 function loadAnswers(index) {
 	const question = model.questions[index];
-	// aktualizujeme vypis otazek
-	// bruteforce varianta
-	/*
-	while (answersVM.length) {
-		answersVM.remove(0);
-	}
-	
-	for (const id in question.answers) {
-		answersVM.push({
-			lang: quizVM.lang,
-			id: id,
-			answerText: self => question.answers[self.id][self.lang],
-			checked: self => quizVM.questionId in model.answers
-				? model.answers[quizVM.questionId].indexOf(self.id) + 1
-				: false
-		});
-	}
-	*/
-	// optimalizovana varianta
-	const ol = answersVM.length,
+
+	const ol = quizVM.answers.length,
 		newAnswers = Object.getOwnPropertyNames(question.answers),
 		nl = newAnswers.length;
 
 	for (var i = 0; i < nl && i < ol; i++) {
 		// updatujeme pouze nody uz co tam jsou
-		answersVM[i].id = newAnswers[i];
+		quizVM.answers[i].id = newAnswers[i];
 	}
 	
 	if (nl < ol) {
 		while(i < ol) {
-			answersVM.remove(i++);
+			quizVM.answers.remove(i++);
 		}
 	} else if (nl > ol) {
 		while(i < nl) {
-			answersVM.push({
+			quizVM.answers.push({
 				lang: quizVM.lang,
 				id: newAnswers[i],
 				answerText: self => model.questions[quizVM.index].answers[self.id][self.lang],
@@ -339,7 +314,7 @@ quizVM.subscribe('index', (index, oldIndex) => {
 });
 
 quizVM.subscribe('lang', lang => {
-	for (const a of answersVM) {
+	for (const a of quizVM.answers) {
 		a.lang = lang;
 	}
 });
@@ -378,7 +353,4 @@ document.body.appendChild(ko.render(quizTmpl, quizVM, {
 		vm.lang = e.target.getAttribute('data-value');
 	}
 }));
-
-ko.renderArray('answers', answerTmpl, answersVM);
-
 </script>
