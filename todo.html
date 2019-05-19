@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TodoMVVM</title>
+<script src="ko.js"></script>
+<body>
+<template id="task">
+	<tr>
+		<td><input type="checkbox" checked="{{done}}"/></td>
+		<td class="{{ddd}}" contenteditable>{{taskName}}</td>
+		<td><button data-ev="click:delete"> X </button></td>
+	</tr>
+</template>
+<template id="todo">
+	<input value="{{input}}"/>
+	<button data-ev="click:addTask"> + </button>
+	<table id="tasklist"></table>
+</template>
+<h1>TODO</h1>
+<script>
+const todoAppVM = ko.viewModel({
+		input: ''
+	}),
+	todoListVM = ko.viewModel([]),
+	taskView = ko.initTmpl('task'),
+	todoAppView = ko.initTmpl('todo');
+
+document.body.appendChild(ko.render(todoAppView, todoAppVM, {
+	addTask: function() {
+		todoListVM.push({
+			taskName: todoAppVM.input,
+			done: false,
+			checked: self => self.done ? 'checked' : ''
+		});
+		todoAppVM.input = '';
+	}
+}));
+
+ko.renderArray('tasklist', taskView, todoListVM, {
+	delete: function() {
+		todoListVM.remove(todoListVM.indexOf(this.vm));
+	}
+});
+</script>

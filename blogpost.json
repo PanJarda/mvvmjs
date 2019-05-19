@@ -1,0 +1,18 @@
+{
+	"headline": "Ahoj",
+	"imgUrl": "btc.jpg",
+	"content": [
+		{
+			"type": "blockquote",
+			"value": "Medzi podnetom a našou reakciou naň je priestor. V tom priestore je naša sila vybrať si reakciu. V našej reakcii sa nachádza náš rast a naša sloboda."
+		},
+		{
+			"type": "p",
+			"value": "Tento citát je často prisudzovaný Viktorovi Franklovi, aj keď v skutočnosti vlastne nevieme, kto ho povedal. Možno znie trochu ťažkopádne, ale je to veľmi užitočný nástroj, ak vieme, ako ho použiť. A témou praktického použitia rôznych hackov mozgu by som sa chcel zaoberať v tomto blogu."
+		},
+		{
+			"type": "img",
+			"src": "ahoj.jpeg"
+		}
+	]
+}

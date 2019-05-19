@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTML-Templates::TEST</title>
+<body>
+<template id="row">
+	<tr>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+</template>
+<h1>Test</h1>
+<table id="table">
+</table>
+<script>
+// ma smysl misto spread opeartoru zavest spojak?
+// ['firstElementChild', ['childNodes', [0, ['innerText]]]]
+// const tr = ['firstElementChild', ['childNodes', null]];
+// car(tr, [0, ['innerText']])
+// vypada to ze to nema smysl, protoze bych musel zavest opacne
+// slinkovanej list abych mohl na zacatku referencovat ten tr.
+// a to by nedavalo smysl zase kvuli prochazeni
+
+class RenderedTmpl {
+	constructor(tmpl, DOMRef) {
+		this.tmpl = tmpl;
+		this.DOMRef = DOMRef;
+	}
+	
+	update(data) {
+		// podle address ke sletomu v tmpl a dat, namapuj zmeny
+		return this;
+	}
+}
+
+class Template {
+	constructor(id, slots) {
+		this._tmpl_content = document.getElementById(id).content;
+		this._addresses    = slots;
+	}
+	
+	render() {
+		// metoda render() musi nejak pri zavolani ulozit
+		// do soukrome konstanty referenci na nově přidaný node v DOM.
+		// Protože relativní adresy vůči kořenovému Nodu máme v privátní
+		// konstantě `_slots`, můžeme bez potíží updatovat data.
+		
+		// projdi sloty a jejich adresy a nody uprav
+		// naklonuj si template
+		const DOMRef = undefined; // tady bude vysledek operace appendChild
+		return new RenderedTmpl(this, DOMRef);
+	}
+}
+
+// -----------
+// APP
+//
+
+const $table = document.getElementById('table');
+
+const rowTmpl = (tr => new Template('row', { // addresses to slots
+		first_name: [...tr, 0, 'innerText'],
+		last_name: [...tr, 1, 'innerText'],
+		age: [...tr, 2, 'innerText']
+	}))(['firstElementChild', 'childNodes']);
+
+const jarda = rowTmpl.render({
+		first_name: '',
+		last_name: 'Pernik',
+		age: 18
+	}, $table);
+
+// TODO: udelat foreach, nebo nejak aby se vykreslovaly templaty tabulek a radku
+// TODO: vyresit hierarchicka data
+
+jarda.update({first_name: 'Olah'});
+
+const tmpl = new Template('row', [
+	//[ adresa v datech  adreasa v templatu]
+	[['features', 'geometry', 'color'], ['firstElementChild', 'childNodes', 0, 'innerText']],
+	[['first_name'], ['firstElementChild', 'childNodes', 1, 'innerText']],
+]);
+
+// potrebuju nejak zajistit foreach
+// tzn. potrebuju mit nekde odkaz na klic ve kterem jsou data ulozena
+// jako pole, nebo potrebuju ObservableArray rovnou
+
+const t2 = new Template2Fragment('template-id', [
+	[['features', 'name'], ['firstElementChild'] 
+]);
+
+// takze ted to vypada tak ze mam posloupnost kroku:
+// [ ] declarativni <template>
+//  |
+// [ ] inicializace templatu pres new Template[Array]
+//  |
+// [ ] vemu template, dam mu pointer na observableData a reknu mu kam
+//  |  se ma vysrat
+// [ ] potom updatuju rovnou ty data
+
+const data = {
+	features: {
+		geometry: {
+			color: 'blue'
+		}
+	},
+	first_name: 'jarda'
+};
+
+
+// potrebuju observableArray
+
+const stats = [
+	{
+		first_name: 'jarda',
+		last_name: 'pernik',
+		age: 21
+	},
+	{
+		first_name: 'pan',
+		last_name: 'jarda',
+		age: 22
+	}
+];
+
+const o_stats = new ObservableArray(stats);
+//o_stats.map(..
+//o_stats.push(..)
+
+// cilem je namapovat tyto data do tabulky
+// a potom to moci sortovat
+
+// pak nejak musim udelat aby se to subscribovalo
+
+const instanceTmpl = tmpl.render(o_stats, document.body);
+// v metode render musi dojit k subscribnuti zmen v o_stats
+
+// potom pri zmene o_stats dostane tmpl
+
+// musim vyresit jak renderovat seznamy a tabulky
+// resp. jak updatovat poradi v tabulkach a seznamech a preskladavat nody
+// s minimalnim poctem zmen
+// a napsat si observer aby se mi updatovaly data pri zmene
+
+// to by se dalo vyresit tak ze bych mel specialni tridu
+// tmplForEach nebo tak neco
+// ktera by si navic drzela reference na nody polozek v tom poli
+// a pokud by doslo v preskladani zdrojovych dat (skrze operace
+// nad ObservableArray) tak by byl tmplForEeach upozornen na danou zmenu
+// a podle ni by danej node presunul nebo provedl proste identickou
+// operaci.
+</script>
+

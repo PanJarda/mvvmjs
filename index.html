@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTML-Templates::TEST</title>
+<script src="ko.js"></script>
+<body>
+<template id="row">
+	<tr>
+		<td contenteditable>{{jmeno}}</td>
+		<td>{{prijmeni}}</td>
+		<td data-age="{{age}}">{{age}}</td>
+		<td>{{fullName}}</td>
+		<td><input value="{{age}}"/></td>
+		<td><button data-ev="click:delete">X</button></td>
+	</tr>
+</template>
+<h1>Test</h1>
+<input id="jmeno" value="test" type="text"/>
+<input id="prijmeni" value="" type="text"/>
+<h2 id="fullName"> </h2>
+<input type="checkbox" checked id="checkbox"/>
+<table id="table">
+</table>
+<script>
+// APP -------------
+
+const tmpl = ko.initTmpl('row');
+
+/*
+nema smysl mit vnorene klice ve viewModelu
+*/
+const vm = new ko.Observable({
+	jmeno: 'Jarda',
+	prijmeni: 'Pernik',
+	age: 19,
+	// computed property
+	fullName: self => self.jmeno + ' ' + self.prijmeni
+});
+
+const $table = document.getElementById('table'),
+	$jmeno = document.getElementById('jmeno'),
+	$prijmeni = document.getElementById('prijmeni');
+
+//$table.appendChild(ko.render(tmpl, vm));
+
+ko.applyBindings(vm, {
+	jmeno: [$jmeno.attributes.value],
+	prijmeni: [$prijmeni.attributes.value]
+});
+
+ko.applyBindings(vm, {
+	fullName: [document.getElementById('fullName').childNodes[0]]
+});
+
+// zatim je to jenom one-way data binding
+// TODO: vyresit jak navesit callbacky na nody co jsou v templatu
+$jmeno.addEventListener('keyup', e => vm.jmeno = e.target.value);
+$prijmeni.addEventListener('keyup', e => vm.prijmeni = e.target.value);
+
+const todovm = new ko.ObservableArray([
+	{
+		_key: 0,
+		jmeno: 'Olah',
+		prijmeni: 'Longo',
+		age: 19,
+		fullName: self => self.jmeno + ' ' + self.prijmeni
+	},
+	{
+		_key: 1,
+		jmeno: 'Pan',
+		prijmeni: 'Jarda',
+		age: 19,
+		fullName: self => self.jmeno + ' ' + self.prijmeni
+	},
+	{
+		_key: 2,
+		jmeno: 'Frantisek',
+		prijmeni: 'Dobrota',
+		age: 19,
+		fullName: self => self.jmeno + ' ' + self.prijmeni
+	}
+]);
+
+//todovm.subscribe('all', (action, item) => console.log('operace: ', action, item));
+new ko.DOMArrayWrapper($table, tmpl, todovm, {
+	delete: function(e) {
+		todovm.remove(todovm.indexOf(this.vm));
+	}
+});
+/*
+class TaskView extends ko.View {
+	constructor(viewModel) {
+		super(viewModel, tr([
+			td($('taskName')),
+			td($('done'))
+		]));
+	}
+	
+	onEdit(e) {
+		this.viewModel.onEdit(e.target.value);
+	}
+}
+
+class TodoListView extends ko.View {
+	constructor(viewModel, template) {
+		super(viewModel, h('table'));
+	}
+	
+	addTask() {
+		this.viewModel.addTask();
+	}
+}
+
+class TaskViewModel extends ko.ViewModel {
+	constructor(taskName, done) {
+		super({
+			taskName: taskName,
+			done: done
+		});
+	}
+	
+	onEdit(taskName) {
+		this.taskName = taskName;
+	}
+	
+	toggle() {
+		this.done = !this.done;
+	}
+}
+
+class TodoListViewModel extends ko.ViewModel {
+	constructor() {
+		super({
+			input: '',
+			tasks: []
+		});
+	}
+	
+	addTask() {
+		this.viewModel.tasks.push(
+			new TaskViewModel(this.viewModel.input, false)
+		);
+		this.viewModel.input = '';
+	}
+}
+
+new TodoListView(todolistvm);
+
+v podstate by inlinovani htmlka nemelo mit vliv na nakej runtime zatez
+nebo muzu zkusit hyperscript
+
+tenhle zpusob pres tridy je picovina, protoze komponovat viewModely jako stromy je blbost
+na to bych se vysral.
+navic uzivatel pise tunu hovnokodu
+
+*/
+
+/*
+for (let i = 0; i < 50; i++) {
+	todovm.push({
+		_key: 2,
+		jmeno: 'Super',
+		prijmeni: 'ddddd',
+		age: 19,
+		fullName: self => self.jmeno + ' ' + self.prijmeni
+	});
+}
+*/
+
+/*
+setTimeout(() => 
+	todovm.push({
+		_key: 2,
+		jmeno: 'Super',
+		prijmeni: 'ddddd',
+		age: 19,
+		fullName: self => self.jmeno + ' ' + self.prijmeni
+	}), 2000);
+
+setTimeout(() => 
+	todovm.insertAt(1, {
+		_key: 2,
+		jmeno: '1111',
+		prijmeni: '1111',
+		age: 19
+	}), 4000);
+
+setTimeout(() => todovm.remove(2), 6000);
+*/
+/*
+ko.renderArray(tmpl, todovm, $table);
+
+potrebuju nakej konteiner kterej bude zapouzdrovat operace nad domem
+z toho observableArray
+
+todovm[0].jmeno = 'olah';
+todovm.sortBy('jmeno', 'asc');
+// potom sortBy provede serazeni zaroven DOM polozek;
+todovm.push({ ... });
+todovm.insertAt(0, ...);
+
+vlastne je to jenom nakej kontejner nad tema observable co uz mam
+
+je otazka jak by se implementoval celej todomvc
+a jak by si vedlo v performanci to sortovani na miste
+protoze syncovat model a viewmodel nebude uplne prdel
+cilem by mohlo byt mit podobne rychlej eshop jak je v demu lit-html
+*/
+</script>

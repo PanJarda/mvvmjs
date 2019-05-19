@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>soucty</title>
+<script src="ko.js"></script>
+<body>
+<template id="tmpl">
+	<span contenteditable>{{a}}</span>
+	+
+	<span contenteditable>{{b}}</span> = <span>{{c}}</span>
+</template>
+<script>
+const tmpl = ko.initTmpl('tmpl'),
+	vm = ko.viewModel({
+		a: 1,
+		b: 2,
+		c: self => parseInt(self.a) + parseInt(self.b)
+	});
+
+document.body.appendChild(ko.render(tmpl, vm, {}));
+</script>

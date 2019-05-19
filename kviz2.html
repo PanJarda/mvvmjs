@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kviz</title>
+<script src="ko.js"></script>
+<body>
+<select data-ev="change:switchI10n">
+	<option value="en">EN</option>
+	<option value="moravian">Moravian</option>
+</select>
+<div data-if="page:PAGE_START">
+	<img src="{{img}}"/><br>
+	<button data-ev="mouseup:start">{{i10n_start}}</button>
+</div>
+<div data-if="page:PAGE_QUIZ">
+	<progress value="{{index}}" max="{{n}}"></progress>{{index}}<!-- -->/<!-- -->{{n}}
+	<br>
+	{{question}}
+	<ol foreach="answers" type="A">
+		<li><input type="checkbox" checked="{{checked}}" id="{{id}}"/><label for="{{id}}">{{answerText}}</label></li>
+	</ol>
+	<button data-ev="mouseup:prev" data-hide="isFirst">{{i10n_prev}}</button>
+	<button data-ev="mouseup:next" data-hide="isLast">{{i10n_next}}</button>
+	<button data-ev="mouseup:done" data-hide="notLast">{{i10n_done}}</button>
+</div>
+<div data-if="page:PAGE_RESULTS">
+	Percentil blbosti: <progress value="100" max="100"></progress>100/100<br>
+	<h1>Gratulujeme!</h1>
+	Seš uplná lama ty gádžo!<br>
+	<button data-ev="mouseup:repeat">Opakovat</button>
+</div>
+<script>
+const i10n = {
+	en: {
+		start: 'start',
+		prev: 'prev',
+		next: 'next',
+		done: 'done'
+	},
+	moravian: {
+		start: 'Začnite',
+		prev: 'Zpátky',
+		next: 'Dál',
+		done: 'Skonči'
+	}
+};
+
+/*
+Melo by to byt taky observable s tim ze by melo podporovat zanorene
+property. Ale to by melo jit udelat si myslim celkem easy.
+*/
+const model = ko.model({
+	questions: [
+		{
+			id: 'otazka1',
+			text: {
+				moravian: 'Ahoj jak se mate?',
+				en: 'hello nigga how r u?'
+			},
+			answers: {
+				'0A': {
+					moravian: 'Jo dobry dik',
+					en: 'fuck'
+				},
+				'0B': {
+					moravian: 'uplne mozna nevim',
+					en: 'not so bad'
+				},
+				'0C': {
+					moravian: '100% nevim',
+					en: 'idk'
+				},
+				'0D': {
+					moravian: 'nevim nevim',
+					en: 'idk x 2'
+				}
+			}
+		},
+		{
+			id: '1',
+			text: {
+				moravian: 'A co delate?',
+				en: 'And what are you doin nigga?'
+			},
+			answers: {
+				'1A': {
+					moravian: 'nic',
+					en: 'nothing'
+				},
+				'1B': {
+					moravian: 'neco',
+					en: 'sellin weed to pupils'
+				},
+				'1C': {
+					moravian: 'o co tady de?',
+					en: 'get d fok out'
+				},
+				'1D': {
+					moravian: 'nevim',
+					en: 'idk again'
+				}
+			}
+		},
+		{
+			id: '2',
+			text: {
+				moravian: 'Ahoj casto ste v prdeli?',
+				en: 'how often are you trashed'
+			},
+			answers: {
+				'2A': {
+					moravian: 'porad',
+					en: 'always'
+				},
+				'2B': {
+					moravian: 'uplne mozna nevim',
+					en: 'almost certainly i am not so sure'
+				},
+				'2C': {
+					moravian: '100% nevim',
+					en: '100% sure idk'
+				}
+			}
+		},
+	],
+	answers: {}
+});
+const questionTmpl = ko.initTmpl('question'),
+	answerTmpl = ko.initTmpl('answer'),
+	/*
+	novy api na viewmodel, nyni by mel mit referenci ma model
+	a obsahovat eventHandlery,
+	zaroven bude odebirat notifikace z modelu, vsude kde
+	se pouzijou hodnoty z modelu ve viewmodelu
+	*/
+	quizVM = ko.viewModel(model, {
+		lang: 'en',
+		img: 'https://cdn.pejskari.cz/quiz/health.jpg?w=512&h=320&c=1',
+		index: 0,
+		i: self => self.index + 1,
+		maxIndex: model.questions.length - 1,
+		n: model.questions.length,
+		questionId: (self, model) => model.questions[self.index].id,
+		question: self => model.questions[self.index].text[self.lang],
+		isFirst: self => !self.index,
+		notLast: self => self.maxIndex != self.index,
+		isLast: self => self.maxIndex == self.index,
+		page: 'PAGE_START',
+		i10n_start: self => i10n[self.lang].start,
+		i10n_prev: self => i10n[self.lang].prev,
+		i10n_next: self => i10n[self.lang].next,
+		i10n_done: self => i10n[self.lang].done,
+		answersVM: ko.viewModel([])
+	},
+	{
+		_saveAnswers(vm,model) {
+		},
+		start(vm) {
+			vm.page = 'PAGE_QUIZ';
+			vm.index = 0;
+		},
+		prev: vm => vm.index--,
+		next: vm => vm.index++,
+		done(vm) {
+			saveAnswers();
+			vm.page = 'PAGE_RESULTS';
+			//setTimeout(() => window.alert('Vyhráváte iPhone 7'), 100);
+		},
+		repeat(vm, model) {
+			model.answers = {};
+			vm.page = 'PAGE_QUIZ'
+			vm.index = 0;
+		},
+		switchI10n(vm, e) {
+			vm.lang = e.target.value;
+		}
+	}),
+	/*
+		otazkou zustava jak vyresit zanorene viewModely
+	*/
+	
+function saveAnswers() {
+	const answersChecked = [];
+	for (var answer of answersVM) {
+		if (answer.checked) {
+			answersChecked.push(answer.id);
+		}
+	}
+	model.answers[quizVM.questionId] = answersChecked;
+}
+
+quizVM.subscribe('index', index => {
+	saveAnswers();
+	const question = model.questions[index];
+	quizVM.question = question.text[quizVM.lang];
+	quizVM.questionId = question.id;
+	
+	while (answersVM.length) {
+		answersVM.remove(0);
+	}
+	
+	for (const id in question.answers) {
+		answersVM.push({
+			lang: quizVM.lang,
+			id: id,
+			answerText: self => question.answers[id][self.lang],
+			checked: question.id in model.answers
+				? model.answers[question.id].indexOf(id) + 1
+				: false
+		});
+	}
+});
+
+quizVM.subscribe('lang', lang => {
+	for (const a of answersVM) {
+		a.lang = lang;
+	}
+});
+
+document.body.appendChild(ko.render(questionTmpl, quizVM));
+
+ko.renderArray('answers', answerTmpl, answersVM);
+</script>

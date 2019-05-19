@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kviz</title>
+<script src="ko.js"></script>
+<body>
+<template id="question">
+	<select data-ev="change:switchI10n">
+		<option value="en">EN</option>
+		<option value="moravian">Moravian</option>
+	</select>
+	<div data-if="page:PAGE_START">
+		<img src="{{img}}"/><br>
+		<button data-ev="mouseup:start">{{i10n_start}}</button>
+	</div>
+	<div data-if="page:PAGE_QUIZ">
+		<progress value="{{index}}" max="{{n}}"></progress>{{index}}<!-- -->/<!-- -->{{n}}
+		<br>
+		{{question}}
+		<ol id="answers" type="A"></ol>
+		<button data-ev="mouseup:prev" data-hide="isFirst">{{i10n_prev}}</button>
+		<button data-ev="mouseup:next" data-hide="isLast">{{i10n_next}}</button>
+		<button data-ev="mouseup:done" data-hide="notLast">{{i10n_done}}</button>
+	</div>
+	<div data-if="page:PAGE_RESULTS">
+		Percentil blbosti: <progress value="100" max="100"></progress>100/100<br>
+		<h1>Gratulujeme!</h1>
+		Seš uplná lama ty gádžo!<br>
+		<button data-ev="mouseup:repeat">Opakovat</button>
+	</div>
+</template>
+<template id="answer">
+	<li><input type="checkbox" checked="{{checked}}" id="{{id}}"/><label for="{{id}}">{{answerText}}</label></li>
+</template>
+<script>
+</script>

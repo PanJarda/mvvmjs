@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eshop</title>
+<script src="ko.js"></script>
+<body>
+<template id="app">
+	<div data-if="page:PAGE_PRODUCTS">
+		<h1>eshop</h1>
+		<div id="productList"></div>
+	</div>
+	<div data-if="page:PAGE_CART">
+	</div>
+</template>
+<template id="product">
+	<div>
+		<img src="{{imgUrl}}"/><br>
+		<h2>{{productName}}</h2>
+		<p>{{productDesc}}</p>
+	</div>
+</template>
+<script>
+const appTmpl = ko.initTmpl('app'),
+	productTmpl = ko.initTmpl('product'),
+	appVM = ko.viewModel({
+		lang: 'en',
+		page: 'PAGE_PRODUCTS'
+	}),
+	productVM = ko.viewModel([
+		{
+			imgUrl: 'https://farm4.staticflickr.com/3268/3189187849_95bf734d4d_b.jpg',
+			productName: 'Margarita',
+			productDesc: 'mozzarela, rajcata a ta omacka cervena'
+		},
+		{
+			imgUrl: 'https://farm1.staticflickr.com/41/107121987_0f821f26ce_b.jpg',
+			productName: 'Zampionova',
+			productDesc: 'zampiony a to co je na margarite'
+		}
+	]);
+
+document.body.appendChild(ko.render(appTmpl, appVM));
+ko.renderArray('productList', productTmpl, productVM);
+</script>
