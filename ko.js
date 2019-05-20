@@ -314,6 +314,7 @@ const ko = (() => {
 			this._subs = {};
 			this._subsDOM = {};
 			this._refs = [];
+			this._parentRefWrapper = this.$parent ? new ParentRefWrapper(this.$parent, this) : undefined;
 			this._setup = true;
 
 			for (const key in data) {
@@ -325,18 +326,18 @@ const ko = (() => {
 					let vm = this;
 					console.log(this._refs);
 					for (const ref of this._refs) {
-						/*
+						
 						// zatim umime pouze parenta, nemuzeme
 						// sousedy, otazka jestli vubec je to potreba
 						if (ref === '_parent') {
-							vm = vm[ref]
+							vm = vm.$parent;
 						} else {
 						// taky je problem jak to pak unsubscribovat
 						// pri odjebani prvku
-						*/
-							vm.subscribe(ref, this.updateComputed(key, data[key]));
-						//	vm = this;
-						//}
+							//console.log(vm);
+							vm.subscribe(ref, this, this.updateComputed(key, data[key]));
+							vm = this;
+						}
 					};
 					this._refs = [];
 				};
@@ -360,9 +361,10 @@ const ko = (() => {
 				});
 			}
 			this._setup = false;
+			delete this._parentRefWrapper;
 		}
 		
-		/*set _parent(v) {
+		set _parent(v) {
 			this.$parent = v;
 		}
 		
@@ -370,19 +372,24 @@ const ko = (() => {
 			//console.log('getting parent', this);
 			if (this._setup) {
 				this._refs.push('_parent');
-				this._refParent = true;
-				return this;
+				return this._parentRefWrapper;
 			}
 			return this.$parent;
-		}*/
-		
-		// TODO: need refactor
-		updateComputed(key, callback) {
-			return () => this[key] = callback(this._data);
 		}
 		
-		subscribe(key, callback) {
-			(this._subs[key] = this._subs[key] || []).push(callback);
+		// TODO: need refactor - unsubs
+		updateComputed(key, callback) {
+			return () => this[key] = callback(this);
+		}
+		
+		subscribe(key, obj, callback) {
+			(this._subs[key] = this._subs[key] || []).push([obj, callback]);
+		}
+		
+		unsubscribe(obj) {
+			for (const key in this._subs) {
+				this._subs[key] = this._subs[key].filter(sub => sub[0] !== obj);
+			}
 		}
 		
 		subscribeDOM(key, node, prop, fn) {
@@ -405,7 +412,29 @@ const ko = (() => {
 					updateDOMNode(...sub, value, oldVal, this);
 				}
 			}
-			this._subs[key].forEach(callback => callback(value, oldVal, this));
+			for (const pair of this._subs[key]) {
+				pair[1](value, oldVal, this);
+			}
+		}
+	}
+	
+	class ParentRefWrapper {
+		constructor(parentObj, child) {
+			this.parentObj = parentObj;
+			this.child = child;
+			
+			for (const key in parentObj._data) {
+				Object.defineProperty(this, key, {
+					set: v => {
+						// tohle nevim jako jestli se nekdy pouzije
+						this.parentObj._data[key] = v;
+					},
+					get: () => {
+						this.child._refs.push(key);
+						return this.parentObj._data[key];
+					}
+				});
+			}
 		}
 	}
 	
@@ -445,16 +474,16 @@ const ko = (() => {
 		}
 	
 		// TODO reduce memory footprint, mozna hodne tech bindovanych listeneru
-		subscribe(action, callback) {
-			this._subs[action].push(callback);
+		subscribe(action, obj, callback) {
+			(this._subs[action] = this._subs[action] || []).push([obj, callback]);
 		}
 		
 		_notify(action, ...data) {
-			for (const clbck of this._subs[action]) {
-				clbck(...data);
+			for (const pair of this._subs[action]) {
+				pair[1](...data);
 			}
-			for (const clbck of this._subs.all) {
-				clbck(action, ...data);
+			for (const pair of this._subs.all) {
+				pair[1](action, ...data);
 			}
 		}
 		
@@ -499,6 +528,8 @@ const ko = (() => {
 		}
 		
 		remove(index) {
+			// unsubs TODO:need refactor
+			this._parent.unsubscribe(this._items[index]);
 			this._items.splice(index, 1);
 			this._notify('remove', index);
 			delete this[this._items.length];
@@ -528,9 +559,9 @@ const ko = (() => {
 			}
 			
 			root.appendChild(frag);
-			vm.subscribe('insertAt', this.insertAt.bind(this));
-			vm.subscribe('push', this.push.bind(this));
-			vm.subscribe('remove', this.remove.bind(this));
+			vm.subscribe('insertAt', this, this.insertAt.bind(this));
+			vm.subscribe('push', this ,this.push.bind(this));
+			vm.subscribe('remove', this, this.remove.bind(this));
 		}
 		
 		// TODO: celkove udelat optimizace na pridavani hodne velkyho

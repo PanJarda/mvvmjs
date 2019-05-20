@@ -304,7 +304,7 @@ function loadAnswers(index) {
 	} else if (nl > ol) {
 		while(i < nl) {
 			quizVM.answers.push({
-				lang: quizVM.lang,
+				lang: self => self._parent.lang,
 				id: newAnswers[i],
 				answerText: self => model.questions[quizVM.index].answers[self.id][self.lang],
 				checked: self => quizVM.questionId in model.answers
@@ -316,15 +316,9 @@ function loadAnswers(index) {
 	}
 }
 
-quizVM.subscribe('index', (index, oldIndex) => {
+quizVM.subscribe('index', 'app', (index, oldIndex) => {
 	saveAnswers(oldIndex);
 	loadAnswers(index);
-});
-
-quizVM.subscribe('lang', lang => {
-	for (const a of quizVM.answers) {
-		a.lang = lang;
-	}
 });
 
 function toggleSelect(vm) {
