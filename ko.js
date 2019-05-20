@@ -5,24 +5,34 @@ const ko = (() => {
 	// na klienta
 	const CHILD_NODES = 'childNodes',
 		IDENTITY = v => v,
-		DATA_IF = function DATA_IF(v, node, props, vm) {
-			// dodelat hierarchii
-			const r = node.attributes['data-if'].value,
+		TOGGLE_DISPLAY = function DATA_IF(v, node, props, vm, attr) {
+			// dodelat hierarchii prvniho
+			// vm musi byt dycky vm ktery je na levy strane
+			const r = node.attributes[attr].value,
 				pair = r.split(':').map(v => v.trim());
+
+			let path = pair[0].split('.'),
+				key1 = path.pop(),
+				vm1 = vm;
+			for (const p of path) {
+				vm1 = vm1[p];
+			}
+			
 			let m;
 			if (m = pair[1].match(/'(.+)'/)) {
-				//console.log('matched', m);
-				return v != m[1];
+				return vm1[key1] == m[1] ? '' : 'none';
 			} else {
-				let path = pair[1].split('.'),
-					key = path.pop();
+				path = pair[1].split('.');
+				let key2 = path.pop(),
+					vm2 = vm;
 				for (const p of path) {
-					vm = vm[p];
+					vm2 = vm2[p];
 				}
-				return v != vm[key];
+				return vm1[key1] == vm2[key2] ? '' : 'none';
 			}
 		},
-		DATA_HIDE = v => v ? 'none' : '',
+		DATA_IF = (v, node, props, vm) => TOGGLE_DISPLAY(v, node, props, vm, 'data-if') ? 'none' : '',
+		DATA_HIDE = (v, node, props, vm) => TOGGLE_DISPLAY(v, node, props, vm, 'data-hide') ? '' : 'none',
 		CHANGE_TAGNAME = (tagName, node) => {	
 			const el = document.createElement(tagName);			
 			
@@ -131,7 +141,7 @@ const ko = (() => {
 						let vl = pair[0].trim();
 						let vr = pair[1].trim();
 
-						(mappings[pair[0].trim()] = mappings[pair[0].trim()] || []).push([[...addr], ['hidden'], 'DATA_IF']);
+						(mappings[pair[0].trim()] = mappings[pair[0].trim()] || []).push([[...addr], ['style', 'display'], 'DATA_IF']);
 					}
 
 					if (name == 'data-tagname') {
@@ -198,7 +208,7 @@ const ko = (() => {
 	}
 
 	// prevent zpetnou vazbu u content editable
-	function updateDOMNode(node, props, fn, value, oldValue, vm) {
+	function updateDOMNode(node, props, fn, vm, value, oldValue) {
 		if (props[0] == 'tagName') {
 			const oldNode = node;
 			node = bindingFns[fn](value, node, props, vm);
@@ -244,16 +254,17 @@ const ko = (() => {
 				// subscribujeme
 				// ale napred musime zjistit u kteryho VM na kterej klic
 				// klice v mappings muzou byt jako '_parent.lang'
-				let vm = data,
-					lastKey = key;
-				let vmref = key.split('.');
-				if (vmref.length > 1) {
-					lastKey = vmref.pop();
-					for (const r of vmref) {
-						vm = vm[r];
-					}
+				let vm = data;
+					lastKey = key,
+					// TODO refactor
+					pair = key.split(':'),
+					vmref = pair[0].split('.');
+					
+				lastKey = vmref.pop();
+				for (const r of vmref) {
+					vm = vm[r];
 				}
-			
+
 				let node = $clone;
 				addr = mapping[0];
 				props = mapping[1];
@@ -263,7 +274,7 @@ const ko = (() => {
 				}
 
 				if (props[0] == 'tagName') {
-					node = bindingFns[fn](vm[lastKey], node);
+					node = bindingFns[fn](vm[lastKey], node, props, vm);
 				} else {
 					nodeProp = node;
 					let i = 0
@@ -272,8 +283,18 @@ const ko = (() => {
 					}
 					nodeProp[props[i]] = bindingFns[fn](vm[lastKey], node, props, vm);
 				}
-
 				vm.subscribeDOM(lastKey, node, props, fn);
+				// pokud je to dvojte porovnani musim subscribovat i druhou pulku
+				if (pair.length > 1) {
+					vmref = pair[1].split('.');
+					lastKey = vmref.pop();
+					vm2 = data;
+					for (const r of vmref) {
+						vm2 = vm2[r];
+					}
+
+					vm2.subscribeDOM(lastKey, node, props, fn, vm);
+				}
 			}
 		}
 		
@@ -335,11 +356,14 @@ const ko = (() => {
 				if (typeof data[key] === "function") {
 					let ret = data[key](this);
 					if (typeof ret === 'object') {
+						this.unsubscribe(this._data[key]);
 						if (Array.isArray(ret)) {
 							ret = new ObservableArray(ret, this);
 						} else {
 							ret = new Observable(ret, this);
-						}
+						}						
+						ret._subsDOM = {...this._data[key]._subsDOM};
+						ret._subs = {...this._data[key]._subs};
 					}
 					this._data[key] = ret;
 					
@@ -427,8 +451,8 @@ const ko = (() => {
 			}
 		}
 		
-		subscribeDOM(key, node, prop, fn) {
-			(this._subsDOM[key] = this._subsDOM[key] || []).push([node, prop, fn]);
+		subscribeDOM(key, node, prop, fn, vm) {
+			(this._subsDOM[key] = this._subsDOM[key] || []).push([node, prop, fn, vm || this]);
 		}
 		
 		rebindSubs(oldNode, newNode) {
@@ -444,7 +468,7 @@ const ko = (() => {
 		update(key, value, oldVal) {
 			if (key in this._subsDOM) {
 				for (const sub of this._subsDOM[key]) {
-					updateDOMNode(...sub, value, oldVal, this);
+					updateDOMNode(...sub, value, oldVal);
 				}
 			}
 			for (const pair of this._subs[key]) {
