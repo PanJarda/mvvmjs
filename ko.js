@@ -6,6 +6,7 @@ const ko = (() => {
 	const CHILD_NODES = 'childNodes',
 		IDENTITY = v => v,
 		DATA_IF = function DATA_IF(v, node) {
+			// dodelat hierarchii
 			const r = node.attributes['data-if'].value,
 				pair = r.split(':').map(v => v.trim());
 			return v != pair[1];
@@ -112,6 +113,13 @@ const ko = (() => {
 
 					if (name == 'data-if') {
 						let pair = val.split(':');
+						//TODO mit moznost jak referencovat parenty
+						// mit moznost porovnavat hodnoty s hodnotama s modelu mezi sebou
+						// ja budu potrebovat pak zaregistrovat na zmeny ten node u parentova klice? tzn.
+						// ze budu muset nejak v mappings predavat ten ref na parenta
+						let vl = pair[0].trim();
+						let vr = pair[1].trim();
+
 						(mappings[pair[0].trim()] = mappings[pair[0].trim()] || []).push([[...addr], ['hidden'], 'DATA_IF']);
 					}
 
@@ -215,13 +223,26 @@ const ko = (() => {
 					subTmpl = document.createElement('template');
 					document.head.appendChild(subTmpl);
 					subTmpl.content.appendChild(node.children[0]);
-					renderArray(node, initTmpl(subTmpl, true), data[key]);
+					renderArray(node, initTmpl(subTmpl, true), data[key], events);
 				}
 				continue;
 			}
 		
 			let addr, props, fn, nodeProp;
 			for (const mapping of tmpl.mappings[key]) {
+				// subscribujeme
+				// ale napred musime zjistit u kteryho VM na kterej klic
+				// klice v mappings muzou byt jako '_parent.lang'
+				let vm = data,
+					lastKey = key;
+				let vmref = key.split('.');
+				if (vmref.length > 1) {
+					lastKey = vmref.pop();
+					for (const r of vmref) {
+						vm = vm[r];
+					}
+				}
+			
 				let node = $clone;
 				addr = mapping[0];
 				props = mapping[1];
@@ -229,18 +250,19 @@ const ko = (() => {
 				for (let i = 0; i < addr.length; i++) {
 					node = node[addr[i]];
 				}
+				
 				if (props[0] == 'tagName') {
-					node = bindingFns[fn](data[key], node);
+					node = bindingFns[fn](vm[lastKey], node);
 				} else {
 					nodeProp = node;
 					let i = 0
 					for (; i < (props.length - 1); i++) {
 						nodeProp = nodeProp[props[i]];
 					}
-					nodeProp[props[i]] = bindingFns[fn](data[key], node, props);
-					
+					nodeProp[props[i]] = bindingFns[fn](vm[lastKey], node, props, vm);			
 				}
-				data.subscribeDOM(key, node, props, fn);
+
+				vm.subscribeDOM(lastKey, node, props, fn);
 			}
 		}
 		
@@ -286,7 +308,8 @@ const ko = (() => {
 	}
 	
 	class Observable {
-		constructor(data) {
+		constructor(data, parent) {
+			this._parent = parent;
 			this._data = {};
 			this._subs = {};
 			this._subsDOM = {};
@@ -306,7 +329,7 @@ const ko = (() => {
 				};
 				
 				if (Array.isArray(data[key])) {
-					this._data[key] = new ObservableArray(data[key]);
+					this._data[key] = new ObservableArray(data[key], this);
 				}
 				
 				Object.defineProperty(this, key, {
@@ -361,7 +384,8 @@ const ko = (() => {
 	}
 	
 	class ObservableArray {
-		constructor(data) {
+		constructor(data, parent) {
+			this._parent = parent;
 			this._items = [];
 			this._index = 0;
 			this._subs = {
@@ -372,7 +396,7 @@ const ko = (() => {
 			};
 
 			for (let i = 0; i < data.length; i++) {
-				this._items.push(new Observable(data[i]));
+				this._items.push(new Observable(data[i], this._parent));
 				
 				this._defProp(i);
 			}
