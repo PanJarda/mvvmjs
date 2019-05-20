@@ -154,7 +154,7 @@ label {
 
 const langs = {
 	en: 'English',
-	moravian: 'Moravian'
+	moravian: 'Czech'
 };
 
 const i10n = {
@@ -263,9 +263,10 @@ const quizTmpl = ko.initTmpl('app'),
 		notLast: self => self.maxIndex != self.index,
 		isLast: self => self.maxIndex == self.index,
 		page: 'PAGE_START',
-		// udelat to tak aby se pokud je vysledek computed property
-		// objekt tak at se z neho udela observable a odsubscribuje
-		i10n: self => i10n[self.lang],
+		i10n: self => {
+			console.log('updating lang', self.lang);
+			return i10n[self.lang];
+		},
 		selectOpened: 'closed',
 		selectOptions:  [
 			{
@@ -279,7 +280,7 @@ const quizTmpl = ko.initTmpl('app'),
 		],
 		answers: []
 	});
-	
+
 function saveAnswers(index) {
 	const answersChecked = [];
 	for (var answer of quizVM.answers) {
@@ -349,9 +350,6 @@ document.body.appendChild(ko.render(quizTmpl, quizVM, {
 		model.answers = {};
 		vm.index = 0;
 		model.answers = {};
-	},
-	switchI10n(vm, e) {
-		vm.lang = e.target.value;
 	},
 	toggleSelect(vm) {
 		toggleSelect(vm);

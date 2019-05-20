@@ -435,6 +435,13 @@ const ko = (() => {
 					} else {
 						ret = new Observable(ret, this);
 					}
+					console.log('updatuju computed', ret, this._data[key]);
+					ret._subsDOM = {...this._data[key]._subsDOM};
+					ret._subs = {...this._data[key]._subs};
+					for (const key in ret._data) {
+						ret.update(key, ret[key], null);
+					}
+
 					delete this._data[key];
 				}
 				this[key] = ret;
@@ -468,11 +475,14 @@ const ko = (() => {
 		update(key, value, oldVal) {
 			if (key in this._subsDOM) {
 				for (const sub of this._subsDOM[key]) {
+					//console.log('updating: ', ...sub);
 					updateDOMNode(...sub, value, oldVal);
 				}
 			}
-			for (const pair of this._subs[key]) {
-				pair[1](value, oldVal, this);
+			if (key in this._subs) {
+				for (const pair of this._subs[key]) {
+					pair[1](value, oldVal, this);
+				}
 			}
 		}
 	}
