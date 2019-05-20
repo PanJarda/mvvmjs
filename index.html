@@ -116,7 +116,7 @@ label {
 <body>
 <div id="app">
 	<div class="select" data-ev="mousedown:toggleSelect">
-		{{lang}}
+		{{langName}}
 		<div class="select-arrow-wrapper">
 			<span class="arrow-down"></span>
 		</div>
@@ -152,16 +152,10 @@ label {
 //const s = document.getElementById('kojs');
 //s.onreadystatechange = s.onload = () => { 
 
-const langs = [
-	{
-		langName: 'English',
-		langCode: 'en'
-	},
-	{
-		langName: 'Moravian',
-		langCode: 'moravian'
-	}
-];
+const langs = {
+	en: 'English',
+	moravian: 'Moravian'
+};
 
 const i10n = {
 	en: {
@@ -257,6 +251,7 @@ const model = {
 const quizTmpl = ko.initTmpl('app'),
 	quizVM = ko.viewModel({
 		lang: 'en',
+		langName: self => langs[self.lang],
 		img: 'https://cdn.pejskari.cz/quiz/health.jpg?w=512&h=320&c=1',
 		index: 0,
 		i: self => self.index + 1,
