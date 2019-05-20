@@ -147,10 +147,10 @@ label {
 		<span class="button" data-ev="mouseup:repeat">Opakovat</span>
 	</div>
 </div>
-<script id="kojs" src="ko.js" async></script>
+<script id="kojs" src="ko.js"></script>
 <script>
-const s = document.getElementById('kojs');
-s.onreadystatechange = s.onload = () => { 
+//const s = document.getElementById('kojs');
+//s.onreadystatechange = s.onload = () => { 
 const i10n = {
 	en: {
 		start: 'Start',
@@ -262,6 +262,7 @@ const quizTmpl = ko.initTmpl('app'),
 		i10n_done: self => i10n[self.lang].done,
 		selectOpened: 'closed',
 		selectOptions: [
+			//TODO: computed props aby mohly referencovat parenta?
 			{
 				langName: 'English',
 				langCode: 'en'
@@ -362,5 +363,5 @@ document.body.appendChild(ko.render(quizTmpl, quizVM, {
 		vm._parent.lang = e.target.getAttribute('data-value');
 	}
 }));
-};
+//};
 </script>

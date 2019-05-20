@@ -322,8 +322,21 @@ const ko = (() => {
 				// magie pro trackovani zavislosti v computed Observable
 				if (typeof data[key] === "function") {
 					this._data[key] = data[key](this);
+					let vm = this;
+					console.log(this._refs);
 					for (const ref of this._refs) {
-						this.subscribe(ref, this.updateComputed(key, data[key]));
+						/*
+						// zatim umime pouze parenta, nemuzeme
+						// sousedy, otazka jestli vubec je to potreba
+						if (ref === '_parent') {
+							vm = vm[ref]
+						} else {
+						// taky je problem jak to pak unsubscribovat
+						// pri odjebani prvku
+						*/
+							vm.subscribe(ref, this.updateComputed(key, data[key]));
+						//	vm = this;
+						//}
 					};
 					this._refs = [];
 				};
@@ -335,10 +348,8 @@ const ko = (() => {
 				Object.defineProperty(this, key, {
 					set: v => {
 						const o = this._data[key];
-						//if (o != v) {
 						this._data[key] = v;
 						this.update(key, v, o);
-						//}
 					},
 					get: () => {
 						if (this._setup) {
@@ -351,6 +362,21 @@ const ko = (() => {
 			this._setup = false;
 		}
 		
+		/*set _parent(v) {
+			this.$parent = v;
+		}
+		
+		get _parent() {
+			//console.log('getting parent', this);
+			if (this._setup) {
+				this._refs.push('_parent');
+				this._refParent = true;
+				return this;
+			}
+			return this.$parent;
+		}*/
+		
+		// TODO: need refactor
 		updateComputed(key, callback) {
 			return () => this[key] = callback(this._data);
 		}
@@ -451,7 +477,7 @@ const ko = (() => {
 		}
 		
 		push(item) {
-			const vm = new Observable(item);
+			const vm = new Observable(item, this._parent);
 			this._items.push(vm);
 			this._notify('push', vm);
 			this._defProp(this._items.length-1);
@@ -462,7 +488,7 @@ const ko = (() => {
 		}
 		
 		insertAt(index, item) {
-			const vm = new Observable(item);
+			const vm = new Observable(item, this._parent);
 			this._items.splice(index, 0, vm);
 			this._notify('insertAt', index, vm);
 			this._defProp(this._items.length-1);
