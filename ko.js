@@ -324,7 +324,6 @@ const ko = (() => {
 				if (typeof data[key] === "function") {
 					this._data[key] = data[key](this);
 					let vm = this;
-					console.log(this._refs);
 					for (const ref of this._refs) {
 						
 						// zatim umime pouze parenta, nemuzeme
