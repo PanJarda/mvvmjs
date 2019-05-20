@@ -121,26 +121,26 @@ label {
 			<span class="arrow-down"></span>
 		</div>
 	</div>
-	<div class="overlay" data-ev="mousedown:toggleSelect" data-if="selectOpened:opened" hidden></div>
-	<div class="options" data-if="selectOpened:opened" data-foreach="selectOptions" hidden>
+	<div class="overlay" data-ev="mousedown:toggleSelect" data-if="selectOpened:'opened'" hidden></div>
+	<div class="options" data-if="selectOpened:'opened'" data-foreach="selectOptions" hidden>
 		<div class="option" data-ev="mouseup:pickLang" data-value="{{langCode}}">{{langName}}</div>
 	</div>
-	<div data-if="page:PAGE_START">
+	<div data-if="page:'PAGE_START'">
 		<img src="{{img}}"/><br>
-		<button class="button" data-ev="mouseup:start">{{i10n_start}}</button>
+		<button class="button" data-ev="mouseup:start">{{i10n.start}}</button>
 	</div>
-	<div data-if="page:PAGE_QUIZ" hidden>
+	<div data-if="page:'PAGE_QUIZ'" hidden>
 		<progress value="{{index}}" max="{{n}}"></progress>{{index}}<!-- -->/<!-- -->{{n}}
 		<br>
 		{{question}}
 		<ol data-foreach="answers" type="A">
 			<li><input type="checkbox" checked="{{checked}}" id="{{id}}"/><label for="{{id}}">{{answerText}}</label></li>
 		</ol>
-		<span class="button" data-ev="mouseup:prev" data-hide="isFirst">{{i10n_prev}}</span>
-		<span class="button" data-ev="mouseup:next" data-hide="isLast">{{i10n_next}}</span>
-		<span class="button"data-ev="mouseup:done" data-hide="notLast">{{i10n_done}}</span>
+		<span class="button" data-ev="mouseup:prev" data-hide="isFirst">{{i10n.prev}}</span>
+		<span class="button" data-ev="mouseup:next" data-hide="isLast">{{i10n.next}}</span>
+		<span class="button"data-ev="mouseup:done" data-hide="notLast">{{i10n.done}}</span>
 	</div>
-	<div data-if="page:PAGE_RESULTS" hidden>
+	<div data-if="page:'PAGE_RESULTS'" hidden>
 		Percentil blbosti: <progress value="100" max="100"></progress>100/100<br>
 		Seš uplná lama ty gádžo!<br>
 		<h1>Gratulujeme!</h1>
@@ -151,6 +151,18 @@ label {
 <script>
 //const s = document.getElementById('kojs');
 //s.onreadystatechange = s.onload = () => { 
+
+const langs = [
+	{
+		langName: 'English',
+		langCode: 'en'
+	},
+	{
+		langName: 'Czech',
+		langCode: 'moravian'
+	}
+];
+
 const i10n = {
 	en: {
 		start: 'Start',
@@ -256,13 +268,11 @@ const quizTmpl = ko.initTmpl('app'),
 		notLast: self => self.maxIndex != self.index,
 		isLast: self => self.maxIndex == self.index,
 		page: 'PAGE_START',
-		i10n_start: self => i10n[self.lang].start,
-		i10n_prev: self => i10n[self.lang].prev,
-		i10n_next: self => i10n[self.lang].next,
-		i10n_done: self => i10n[self.lang].done,
+		// udelat to tak aby se pokud je vysledek computed property
+		// objekt tak at se z neho udela observable a odsubscribuje
+		i10n: self => i10n[self.lang],
 		selectOpened: 'closed',
-		selectOptions: [
-			//TODO: computed props aby mohly referencovat parenta?
+		selectOptions:  [
 			{
 				langName: 'English',
 				langCode: 'en'
@@ -304,9 +314,8 @@ function loadAnswers(index) {
 	} else if (nl > ol) {
 		while(i < nl) {
 			quizVM.answers.push({
-				lang: self => self._parent.lang,
 				id: newAnswers[i],
-				answerText: self => model.questions[quizVM.index].answers[self.id][self.lang],
+				answerText: self => model.questions[quizVM.index].answers[self.id][self._parent.lang],
 				checked: self => quizVM.questionId in model.answers
 					? model.answers[quizVM.questionId].indexOf(self.id) + 1
 					: false

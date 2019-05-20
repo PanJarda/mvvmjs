@@ -5,11 +5,22 @@ const ko = (() => {
 	// na klienta
 	const CHILD_NODES = 'childNodes',
 		IDENTITY = v => v,
-		DATA_IF = function DATA_IF(v, node) {
+		DATA_IF = function DATA_IF(v, node, props, vm) {
 			// dodelat hierarchii
 			const r = node.attributes['data-if'].value,
 				pair = r.split(':').map(v => v.trim());
-			return v != pair[1];
+			let m;
+			if (m = pair[1].match(/'(.+)'/)) {
+				//console.log('matched', m);
+				return v != m[1];
+			} else {
+				let path = pair[1].split('.'),
+					key = path.pop();
+				for (const p of path) {
+					vm = vm[p];
+				}
+				return v != vm[key];
+			}
 		},
 		DATA_HIDE = v => v ? 'none' : '',
 		CHANGE_TAGNAME = (tagName, node) => {	
@@ -190,7 +201,7 @@ const ko = (() => {
 	function updateDOMNode(node, props, fn, value, oldValue, vm) {
 		if (props[0] == 'tagName') {
 			const oldNode = node;
-			node = bindingFns[fn](value, node);
+			node = bindingFns[fn](value, node, props, vm);
 			vm.rebindSubs(oldNode, node);
 			// nejak prepsat bindings this.node u subscriptions
 		} else {
@@ -199,7 +210,7 @@ const ko = (() => {
 			for (; i < (props.length - 1); i++) {
 				nodeProp = nodeProp[props[i]];
 			}
-			nodeProp[props[i]] = bindingFns[fn](value, node);
+			nodeProp[props[i]] = bindingFns[fn](value, node, props, vm);
 		}
 	}
 
@@ -250,7 +261,7 @@ const ko = (() => {
 				for (let i = 0; i < addr.length; i++) {
 					node = node[addr[i]];
 				}
-				
+
 				if (props[0] == 'tagName') {
 					node = bindingFns[fn](vm[lastKey], node);
 				} else {
@@ -259,7 +270,7 @@ const ko = (() => {
 					for (; i < (props.length - 1); i++) {
 						nodeProp = nodeProp[props[i]];
 					}
-					nodeProp[props[i]] = bindingFns[fn](vm[lastKey], node, props, vm);			
+					nodeProp[props[i]] = bindingFns[fn](vm[lastKey], node, props, vm);
 				}
 
 				vm.subscribeDOM(lastKey, node, props, fn);
@@ -322,10 +333,18 @@ const ko = (() => {
 				this._subs[key] = [];
 				// magie pro trackovani zavislosti v computed Observable
 				if (typeof data[key] === "function") {
-					this._data[key] = data[key](this);
+					let ret = data[key](this);
+					if (typeof ret === 'object') {
+						if (Array.isArray(ret)) {
+							ret = new ObservableArray(ret, this);
+						} else {
+							ret = new Observable(ret, this);
+						}
+					}
+					this._data[key] = ret;
+					
 					let vm = this;
 					for (const ref of this._refs) {
-						
 						// zatim umime pouze parenta, nemuzeme
 						// sousedy, otazka jestli vubec je to potreba
 						if (ref === '_parent') {
@@ -338,11 +357,17 @@ const ko = (() => {
 							vm = this;
 						}
 					};
+
 					this._refs = [];
 				};
 				
-				if (Array.isArray(data[key])) {
-					this._data[key] = new ObservableArray(data[key], this);
+				// submodel jako objekt nebo pole
+				if (typeof data[key] === 'object') {
+					if (Array.isArray(data[key])) {
+						this._data[key] = new ObservableArray(data[key], this);
+					} else {
+						this._data[key] = new Observable(data[key], this);
+					}
 				}
 				
 				Object.defineProperty(this, key, {
@@ -378,7 +403,18 @@ const ko = (() => {
 		
 		// TODO: need refactor - unsubs
 		updateComputed(key, callback) {
-			return () => this[key] = callback(this);
+			return () => {
+				let ret = callback(this);
+				if (typeof ret === 'object') {
+					if (Array.isArray(ret)) {
+						ret = new ObservableArray(ret, this);
+					} else {
+						ret = new Observable(ret, this);
+					}
+					delete this._data[key];
+				}
+				this[key] = ret;
+			}
 		}
 		
 		subscribe(key, obj, callback) {
