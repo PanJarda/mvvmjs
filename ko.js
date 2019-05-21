@@ -477,8 +477,10 @@ const ko = (() => {
 		}
 
 		update(key, value, oldVal) {
-			if (value == oldVal) {
-				return;
+			if (value === oldVal) {
+				//TODO Why
+				//console.log(key, oldVal, value);
+				//return;
 			}
 			if (key in this._subsDOM) {
 				for (const sub of this._subsDOM[key]) {
