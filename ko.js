@@ -353,6 +353,8 @@ const ko = (() => {
 				this._data[key] = data[key];
 				this._subs[key] = [];
 				// magie pro trackovani zavislosti v computed Observable
+				// TODO odstranit duplicitni subscriby pri situaci treba:
+				// self => self.a + self.a; kdy se to snazi regnout 2x proste
 				if (typeof data[key] === "function") {
 					let ret = data[key](this);
 					if (typeof ret === 'object') {
@@ -435,7 +437,7 @@ const ko = (() => {
 					} else {
 						ret = new Observable(ret, this);
 					}
-					console.log('updatuju computed', ret, this._data[key]);
+					//console.log('updatuju computed', ret, this._data[key]);
 					ret._subsDOM = {...this._data[key]._subsDOM};
 					ret._subs = {...this._data[key]._subs};
 					for (const key in ret._data) {
@@ -443,8 +445,10 @@ const ko = (() => {
 					}
 
 					delete this._data[key];
+					this._data[key] = ret;
+				} else {
+					this[key] = ret;
 				}
-				this[key] = ret;
 			}
 		}
 		
@@ -473,6 +477,9 @@ const ko = (() => {
 		}
 
 		update(key, value, oldVal) {
+			if (value == oldVal) {
+				return;
+			}
 			if (key in this._subsDOM) {
 				for (const sub of this._subsDOM[key]) {
 					//console.log('updating: ', ...sub);
@@ -480,8 +487,11 @@ const ko = (() => {
 				}
 			}
 			if (key in this._subs) {
-				for (const pair of this._subs[key]) {
+				/*for (const pair of this._subs[key]) {
 					pair[1](value, oldVal, this);
+				}*/
+				for (let i = 0; i < this._subs[key].length; i++) {
+					this._subs[key][i][1](value, oldVal, this);
 				}
 			}
 		}

@@ -263,10 +263,7 @@ const quizTmpl = ko.initTmpl('app'),
 		notLast: self => self.maxIndex != self.index,
 		isLast: self => self.maxIndex == self.index,
 		page: 'PAGE_START',
-		i10n: self => {
-			console.log('updating lang', self.lang);
-			return i10n[self.lang];
-		},
+		i10n: self => i10n[self.lang],
 		selectOpened: 'closed',
 		selectOptions:  [
 			{
