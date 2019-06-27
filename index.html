@@ -127,7 +127,7 @@ label {
 	</div>
 	<div data-if="page:'PAGE_START'">
 		<img src="{{img}}"/><br>
-		<button class="button" data-ev="mouseup:start">{{i10n.start}}</button>
+		<span class="button" data-ev="mouseup:start">{{i10n.start}}</span>
 	</div>
 	<div data-if="page:'PAGE_QUIZ'">
 		<progress value="{{index}}" max="{{n}}"></progress>{{index}}<!-- -->/<!-- -->{{n}}
@@ -147,10 +147,14 @@ label {
 		<span class="button" data-ev="mouseup:repeat">Opakovat</span>
 	</div>
 </div>
-<script id="kojs" src="ko.js"></script>
+<script id="kojs" src="ko.js" async defer></script>
 <script>
-//const s = document.getElementById('kojs');
-//s.onreadystatechange = s.onload = () => { 
+/*
+const s = document.getElementById('kojs');
+s.onreadystatechange = s.onload = () => {
+	// 
+};
+*/
 
 const langs = {
 	en: 'English',
@@ -329,7 +333,7 @@ function toggleSelect(vm) {
 	vm.selectOpened = vm.selectOpened == 'opened' ? 'closed' : 'opened';
 }
 
-document.body.appendChild(ko.render(quizTmpl, quizVM, {
+ko.render(quizTmpl, quizVM, {
 	start(vm) {
 		vm.page = 'PAGE_QUIZ';
 		vm.index = 0;
@@ -355,6 +359,6 @@ document.body.appendChild(ko.render(quizTmpl, quizVM, {
 		toggleSelect(vm._parent);
 		vm._parent.lang = e.target.getAttribute('data-value');
 	}
-}));
+});
 //};
 </script>
