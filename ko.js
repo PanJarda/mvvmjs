@@ -364,8 +364,9 @@ const ko = (() => {
 						} else {
 							ret = new Observable(ret, this);
 						}						
-						ret._subsDOM = {...this._data[key]._subsDOM};
-						ret._subs = {...this._data[key]._subs};
+						// ret._subsDOM = {...this._data[key]._subsDOM};
+						ret._subsDOM = Object.assign({}, this._data[key]._subsDOM);
+						ret._subs = Object.assign({}, this._data[key]._subs);
 					}
 					this._data[key] = ret;
 					
@@ -438,8 +439,8 @@ const ko = (() => {
 						ret = new Observable(ret, this);
 					}
 					//console.log('updatuju computed', ret, this._data[key]);
-					ret._subsDOM = {...this._data[key]._subsDOM};
-					ret._subs = {...this._data[key]._subs};
+					ret._subsDOM = Object.assign({}, this._data[key]._subsDOM);
+					ret._subs = Object.assign({}, this._data[key]._subs);
 					for (const key in ret._data) {
 						ret.update(key, ret[key], null);
 					}
