@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Typeahead example</title>
+</head>
+<body>
+    <div id="app">
+        <input type="text" data-ev="input:onInput" data-value="searchText">
+        <ul data-foreach="hints">
+            <li>{{name}}</li>
+        </ul>
+    </div>
+    <script defer async id="frontend-lib" src="ko.js"></script>
+    <script>
+        const frontendLibScript = document.getElementById('frontend-lib');
+
+        frontendLibScript.onreadystatechange = frontendLibScript.onload = frontendLibScriptOnLoadHandler;
+
+        function frontendLibScriptOnLoadHandler() {
+            const apiUrl = "https://api.pejskari.cz/v1/cities/";
+            const limit = 10;
+
+            const template = ko.initTmpl("app");
+
+            const viewModel = ko.viewModel({
+                searchText: "",
+                hints: []
+            });
+
+            const eventHandlers = {
+                onInput: function onInput(viewModel, event) {
+                    const inputValue = event.target.value;
+                    const url = `${apiUrl}${inputValue}?l=${limit.toString()}`;
+                    setTimeout(function fetchHints() {
+                        fetch(url)
+                            .then(result => result.json())
+                            .then(data => {
+                                const nHints = viewModel.hints.length;
+                                for (let i = 0; i < nHints; i = i + 1) {
+                                    viewModel.hints.remove(0);
+                                }
+                                for (const item of data) {
+                                    viewModel.hints.push({name: item.name});
+                                }
+                                console.log(viewModel.hints);
+                            });
+                    }, 300);
+                }
+            };
+
+            ko.render(template, viewModel, eventHandlers);
+        }
+    </script>
+</body>
+</html>
