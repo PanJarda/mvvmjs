@@ -6,8 +6,8 @@
 </head>
 <body>
     <div id="app">
-        <input type="text" data-ev="input:onInput" data-value="searchText">
-        <ul data-foreach="hints">
+        <input type="text" data-ev="input:onInput;focusin:onFocusIn;focusout:onFocusOut" data-value="searchText">
+        <ul data-foreach="hints" data-if="hinterVisible:'TRUE'">
             <li>{{name}}</li>
         </ul>
     </div>
@@ -25,7 +25,8 @@
 
             const viewModel = ko.viewModel({
                 searchText: "",
-                hints: []
+                hints: [],
+                hinterVisible: "FALSE"
             });
 
             let timerId;
@@ -38,6 +39,12 @@
                         clearTimeout(timerId);
                     }
                     timerId = setTimeout(fetchHints(viewModel, url), 300);
+                },
+                onFocusIn: function onFocusIn(viewModel) {
+                    viewModel.hinterVisible = "TRUE";
+                },
+                onFocusOut: function onFocusOut(viewModel) {
+                    viewModel.hinterVisible = "FALSE";
                 }
             };
 
