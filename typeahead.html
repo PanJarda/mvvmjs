@@ -38,6 +38,8 @@
                             .then(data => {
                                 const nHints = viewModel.hints.length;
                                 for (let i = 0; i < nHints; i = i + 1) {
+                                    // you need to manually remove all the previous items
+                                    // because you need to tell the framework to clean the DOM
                                     viewModel.hints.remove(0);
                                 }
                                 for (const item of data) {
