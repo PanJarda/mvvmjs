@@ -28,30 +28,39 @@
                 hints: []
             });
 
+            let timerId;
+
             const eventHandlers = {
                 onInput: function onInput(viewModel, event) {
                     const inputValue = event.target.value;
                     const url = `${apiUrl}${inputValue}?l=${limit.toString()}`;
-                    setTimeout(function fetchHints() {
-                        fetch(url)
-                            .then(result => result.json())
-                            .then(data => {
-                                const nHints = viewModel.hints.length;
-                                for (let i = 0; i < nHints; i = i + 1) {
-                                    // you need to manually remove all the previous items
-                                    // because you need to tell the framework to clean the DOM
-                                    viewModel.hints.remove(0);
-                                }
-                                for (const item of data) {
-                                    viewModel.hints.push({name: item.name});
-                                }
-                                console.log(viewModel.hints);
-                            });
-                    }, 300);
+                    if (timerId) {
+                        clearTimeout(timerId);
+                    }
+                    timerId = setTimeout(fetchHints(viewModel, url), 300);
                 }
             };
 
             ko.render(template, viewModel, eventHandlers);
+        }
+
+        function fetchHints(viewModel, url) {
+            return function() {
+                fetch(url)
+                    .then(result => result.json())
+                    .then(data => {
+                        const nHints = viewModel.hints.length;
+                        for (let i = 0; i < nHints; i = i + 1) {
+                            // you need to manually remove all the previous items
+                            // because you need to tell the framework to clean the DOM
+                            viewModel.hints.remove(0);
+                        }
+                        for (const item of data) {
+                            viewModel.hints.push({name: item.name});
+                        }
+                        console.log(viewModel.hints);
+                    });
+            }
         }
     </script>
 </body>
