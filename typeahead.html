@@ -6,17 +6,18 @@
 </head>
 <body>
     <div id="app">
-        <input type="text" data-ev="input:onInput;focusin:onFocusIn;focusout:onFocusOut" data-value="searchText">
+        <input type="text" data-ev="input:onInput;focusin:onFocusIn;focusout:onFocusOut" value="{{searchText}}">
         <ul data-foreach="hints" data-if="hinterVisible:'TRUE'">
-            <li>{{name}}</li>
+            <li data-ev="mousedown:hintOnClick">{{name}}</li>
         </ul>
     </div>
-    <script defer async id="frontend-lib" src="ko.js"></script>
+    <script defer async id="frontend-lib" src="https://panjarda.github.io/mvvmjs/ko.js"></script>
     <script>
         const frontendLibScript = document.getElementById('frontend-lib');
 
         frontendLibScript.onreadystatechange = frontendLibScript.onload = frontendLibScriptOnLoadHandler;
 
+        let viewModelGlobal;
         function frontendLibScriptOnLoadHandler() {
             const apiUrl = "https://api.pejskari.cz/v1/cities/";
             const limit = 10;
@@ -29,12 +30,15 @@
                 hinterVisible: "FALSE"
             });
 
+            viewModelGlobal = viewModel;
+
             let timerId;
 
             const eventHandlers = {
                 onInput: function onInput(viewModel, event) {
                     const inputValue = event.target.value;
                     const url = `${apiUrl}${inputValue}?l=${limit.toString()}`;
+                    viewModel.searchText = inputValue;
                     if (timerId) {
                         clearTimeout(timerId);
                     }
@@ -44,11 +48,25 @@
                     viewModel.hinterVisible = "TRUE";
                 },
                 onFocusOut: function onFocusOut(viewModel) {
+                    eraseHintList(viewModel);
                     viewModel.hinterVisible = "FALSE";
+
+                },
+                hintOnClick: function hintOnClick(viewModel, event) {
+                    viewModel._parent.searchText = event.target.textContent;
                 }
             };
 
             ko.render(template, viewModel, eventHandlers);
+        }
+
+        function eraseHintList(viewModel) {
+            const nHints = viewModel.hints.length;
+            for (let i = 0; i < nHints; i = i + 1) {
+                // you need to manually remove all the previous items
+                // because you need to tell the framework to clean the DOM
+                viewModel.hints.remove(0);
+            }
         }
 
         function fetchHints(viewModel, url) {
@@ -56,16 +74,10 @@
                 fetch(url)
                     .then(result => result.json())
                     .then(data => {
-                        const nHints = viewModel.hints.length;
-                        for (let i = 0; i < nHints; i = i + 1) {
-                            // you need to manually remove all the previous items
-                            // because you need to tell the framework to clean the DOM
-                            viewModel.hints.remove(0);
-                        }
+                        eraseHintList(viewModel);
                         for (const item of data) {
                             viewModel.hints.push({name: item.name});
                         }
-                        console.log(viewModel.hints);
                     });
             }
         }
