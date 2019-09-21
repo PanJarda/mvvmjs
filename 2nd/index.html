@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>2nd</title>
+<style>
+body{background-color:#222;color:#ccc}
+</style>
+<div id="app">
+<h1>Ahoj</h1>
+</div>
+<script>
+let d,id,app,tc,v,u,s,vm,o;
+app=(d=document)[id='getElementById']('app')
+tc='textContent'
+v={
+	app: {
+		type:tc,
+		el:app
+	}
+};
+u=(v,vm)=>(o=Object).keys(vm).forEach(k=>v[k].el[v[k].type] = vm[k]);
+vm={
+	app:'ahoj'
+};
+(s=setTimeout)(()=>u(v,vm),5e2);
+s(()=>u(v,{app:'fff'}),1e3);
+</script>
