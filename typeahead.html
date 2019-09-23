@@ -17,10 +17,10 @@
 
         frontendLibScript.onreadystatechange = frontendLibScript.onload = frontendLibScriptOnLoadHandler;
 
-        let viewModelGlobal;
         function frontendLibScriptOnLoadHandler() {
             const apiUrl = "https://api.pejskari.cz/v1/cities/";
             const limit = 10;
+            const timeout = 300;
 
             const template = ko.initTmpl("app");
 
@@ -30,10 +30,12 @@
                 hinterVisible: "FALSE"
             });
 
-            viewModelGlobal = viewModel;
-
             let timerId;
 
+            // potrebuju udelat to ze kdyz zmacknu tlacitko tak se mi hned posle request
+            // ale kdyz zmacknu hned dalsi tak se musi logicky ten predchozi invalidovat
+            // spis bych to mel udelat tak ze bude jakoze fronta requestu nebo casovy okno
+            // ze proste se posle jeden request max jednou za 300ms.
             const eventHandlers = {
                 onInput: function onInput(viewModel, event) {
                     const inputValue = event.target.value;
@@ -42,7 +44,7 @@
                     if (timerId) {
                         clearTimeout(timerId);
                     }
-                    timerId = setTimeout(fetchHints(viewModel, url), 300);
+                    timerId = setTimeout(fetchHints(viewModel, url), timeout);
                 },
                 onFocusIn: function onFocusIn(viewModel) {
                     viewModel.hinterVisible = "TRUE";

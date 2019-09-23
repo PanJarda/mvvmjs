@@ -1,5 +1,4 @@
 const ko = (() => {
-	// TODO: nejak udelat applyBindings nad uz vykreslenym DOMem
 	// kvuli rychlejsimu nacitani a SSR
 	// kvuli SSR by melo jit ty bindingy serializovat a poslat v jsonu
 	// na klienta
@@ -198,13 +197,16 @@ const ko = (() => {
 			}
 		}
 
-		return {
+		let res= {
 			DOMRef: $tmpl,
 			isTmpl: isTmpl,
 			mappings: mappings,
 			bindings: bindings,
 			events: events
 		};
+		console.log(mappings);
+		//console.log(bindings);
+		return res;
 	}
 
 	// prevent zpetnou vazbu u content editable
@@ -254,7 +256,7 @@ const ko = (() => {
 				// subscribujeme
 				// ale napred musime zjistit u kteryho VM na kterej klic
 				// klice v mappings muzou byt jako '_parent.lang'
-				let vm = data;
+				let vm = data,
 					lastKey = key,
 					// TODO refactor
 					pair = key.split(':'),

@@ -8,7 +8,7 @@ body{background-color:#222;color:#ccc}
 <h1>Ahoj</h1>
 </div>
 <script>
-let d,id,app,tc,v,u,s,vm,o;
+let d,id,app,tc,v,u,s,vm,o,init,set,insert;
 app=(d=document)[id='getElementById']('app')
 tc='textContent'
 v={
@@ -23,4 +23,82 @@ vm={
 };
 (s=setTimeout)(()=>u(v,vm),5e2);
 s(()=>u(v,{app:'fff'}),1e3);
+set=(o,k)=>(o[k] = o[k] || []);
+insert=(o,k,v)=>set(o,k).push(v);
+init=sel=>{
+    let el,st,n,re,nv,NV,map,m,ID,AT,LN,NM,VL,addr,_at,i,_n,_nn,_nv,CE,IT,bin;
+    el=d[id](sel);
+    st=[el];
+    re=/{{.+}}/;
+    NV='nodeValue';
+    AT='attributes';
+    LN='length';
+    NM='name';
+    VL='value';
+    map={};
+    bin={};
+    ID='IDENTITY';
+    CE='contenteditable';
+    IT='innerText';
+    addr=[];
+    /*
+       bindings {
+         "ahoj":
+       }
+     */
+    for(;st.length;) {
+        n=st.pop();
+        // nodeValue
+        (nv=n[NV]) && (m=nv.match(re)) && (map[m[1]] = map[m[1]] || []).push([[...addr], [NV], ID]);
+        if(n[AT]) {
+            _at=[];
+            for(i=0;i<n[AT][LN];i++){
+                _n=n[AT][i];
+                _nn=n[NM];
+                _nv=_n[VL];
+                // innerText
+                _nn===CE && (m=n[IT].match(re)) && set(bin,m[1]).push({input: [...addr, IT]});
+                // value
+                _nn===NV && (m=_nv.match(re)) &&
+                    insert(bin,m[1],{keyup: [...addr, VL]}) &&
+                    insert(map,m[1],[[...addr], [VL], ID]);
+            }
+        }
+    }
+}
+/*
+<template id="template">
+    <div>
+        <h1>{{heading}}</h1>
+        <button data-ev="click:onClick">Ok</button>
+    </div>
+</template>
+// angular style
+class AppComponent {
+    constructor(id) {
+        this.id = id;
+        this.syntetic = self=>self.id + 1;
+        this.heading='ahoj'
+    }
+    onClick = e =>
+}
+$Component(AppComponent, {
+    templateId: 'template',
+    route: '/'
+}
+// vue style
+new VM({
+    template: '#template',
+    route: '/',
+    vm: {
+        name: 'ahoj',
+        surname: 'Ahoj',
+        fullName: s=>s.name + ' ' + s.surname
+    },
+    events: {
+        onClick: vm => vm.name + 'ahoj'
+    }
+})
+ */
+
 </script>
